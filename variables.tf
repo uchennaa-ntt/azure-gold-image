@@ -1,13 +1,25 @@
 variable "location" {
-  default = "South Central US"
+  default = "East US"
 }
 
-variable "resource_group_name" {
+variable "gold_rg_name" {
   default = "rg-gold-image"
 }
 
+variable "network_rg_name" {
+  default = "rg-aks-monitoring"
+}
+
+variable "existing_vnet_name" {
+  default = "NTTLAB"
+}
+
+variable "existing_subnet_name" {
+  default = "NTTLAB-snet-web"
+}
+
 variable "admin_username" {
-  default = "imageadmin"
+  default = "azureadmin"
 }
 
 variable "admin_password" {
