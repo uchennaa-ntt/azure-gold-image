@@ -1,5 +1,5 @@
 variable "location" {
-  default = "East US"
+  default = "South Central US"
 }
 
 variable "gold_rg_name" {
@@ -19,7 +19,7 @@ variable "existing_subnet_name" {
 }
 
 variable "admin_username" {
-  default = "azureadmin"
+  default = "imagedmin"
 }
 
 variable "admin_password" {
