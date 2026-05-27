@@ -1,49 +1,48 @@
-resource "azurerm_resource_group" "rg" {
-  name     = var.resource_group_name
+resource "azurerm_resource_group" "gold_rg" {
+  name     = var.gold_rg_name
   location = var.location
 }
 
-resource "azurerm_virtual_network" "vnet" {
-  name                = "vnet-gold"
-  address_space       = ["10.10.0.0/16"]
-  location            = var.location
-  resource_group_name = azurerm_resource_group.rg.name
+# -----------------------------
+# Reference Existing VNet
+# -----------------------------
+data "azurerm_virtual_network" "existing_vnet" {
+  name                = var.existing_vnet_name
+  resource_group_name = var.network_rg_name
 }
 
-resource "azurerm_subnet" "subnet" {
-  name                 = "default"
-  resource_group_name  = azurerm_resource_group.rg.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.10.1.0/24"]
+data "azurerm_subnet" "existing_subnet" {
+  name                 = var.existing_subnet_name
+  virtual_network_name = data.azurerm_virtual_network.existing_vnet.name
+  resource_group_name  = var.network_rg_name
 }
 
-resource "azurerm_public_ip" "pip" {
-  name                = "pip-gold"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Dynamic"
-}
-
+# -----------------------------
+# NIC using existing subnet
+# -----------------------------
 resource "azurerm_network_interface" "nic" {
-  name                = "nic-gold"
+  name                = "gold-image-nic"
   location            = var.location
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = azurerm_resource_group.gold_rg.name
 
   ip_configuration {
     name                          = "internal"
-    subnet_id                     = azurerm_subnet.subnet.id
+    subnet_id                     = data.azurerm_subnet.existing_subnet.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.pip.id
   }
 }
 
+# -----------------------------
+# Windows Gold Image Build VM
+# -----------------------------
 resource "azurerm_windows_virtual_machine" "vm" {
   name                = "win2022-gold-build"
   location            = var.location
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = azurerm_resource_group.gold_rg.name
   size                = "Standard_D2s_v3"
   admin_username      = var.admin_username
   admin_password      = var.admin_password
+
   network_interface_ids = [
     azurerm_network_interface.nic.id
   ]
@@ -61,17 +60,19 @@ resource "azurerm_windows_virtual_machine" "vm" {
   }
 }
 
+# -----------------------------
 # Azure Compute Gallery
+# -----------------------------
 resource "azurerm_shared_image_gallery" "gallery" {
-  name                = "goldImageGallery"
-  resource_group_name = azurerm_resource_group.rg.name
+  name                = "goldImageGalpcm"
+  resource_group_name = azurerm_resource_group.gold_rg.name
   location            = var.location
 }
 
 resource "azurerm_shared_image" "windows_image" {
   name                = "Win2022-Gold"
   gallery_name        = azurerm_shared_image_gallery.gallery.name
-  resource_group_name = azurerm_resource_group.rg.name
+  resource_group_name = azurerm_resource_group.gold_rg.name
   location            = var.location
   os_type             = "Windows"
 
